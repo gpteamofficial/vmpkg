@@ -17,7 +17,7 @@ If you have **Linux + Bash + curl/wget + tar (optionally unzip)** — **VMPKG wo
     <img src="https://img.shields.io/badge/shell-bash-4EAA25?logo=gnu-bash&logoColor=ffffff" alt="Shell: Bash">
   </a>
   <a href="https://github.com/gpteamofficial/vmpkg/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
+    <img src="https://img.shields.io/badge/license-GPL-blue.svg" alt="License: MIT">
   </a>
   <a href="https://github.com/gpteamofficial/vmpkg">
     <img src="https://img.shields.io/badge/type-self--contained%20pkg%20manager-ff6f00" alt="Self-contained package manager">
