@@ -2,20 +2,11 @@
 # vmpkg - Very Minimal / Very Modular Package Manager
 # Self-contained Linux user-space package manager.
 #
-# - No dependency on apt, dnf, pacman, yum, zypper, apk, xbps, emerge, etc.
-# - Everything lives under: $HOME/.vmpkg (or $VMPKG_ROOT)
-# - Packages are simple archives (tar.gz / tar / zip) downloaded from URLs
-# - Extracted into:   $VMPKG_ROOT/pkgs/<name>-<version>
-# - Binaries linked to $VMPKG_BIN (default: $HOME/.local/bin)
-#
-# Registry format (pipe-separated):
-#   name|version|url|description
-#
 # LICENSE: MIT
 
 set -euo pipefail
 
-readonly VMPKG_VERSION="1.1.1"
+readonly VMPKG_VERSION="1.1.2"
 
 ###############################################################################
 # ENV / FLAGS
@@ -131,7 +122,7 @@ trap 'echo; die "Operation interrupted by user."' INT TERM
 
 require_linux() {
   local uname_s
-  uname_s="$(uname -s 2>/dev/null || echo "Unknown")"
+  uname_s="$(uname -s || echo "Unknown")"
   if [[ "$uname_s" != "Linux" ]]; then
     die "vmpkg supports Linux only. Detected: ${uname_s}"
   fi
@@ -202,9 +193,9 @@ EOF
 ###############################################################################
 
 choose_downloader() {
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl >/dev/null; then
     echo "curl"
-  elif command -v wget >/dev/null 2>&1; then
+  elif command -v wget >/dev/null; then
     echo "wget"
   else
     die "Neither curl nor wget found. Install one of them to use vmpkg."
@@ -263,15 +254,15 @@ extract_archive() {
 
   case "$type" in
     tar.gz)
-      command -v tar >/dev/null 2>&1 || die "tar is required to extract .tar.gz archives."
+      command -v tar >/dev/null || die "tar is required to extract .tar.gz archives."
       tar -xzf "$archive" -C "$dest"
       ;;
     tar)
-      command -v tar >/dev/null 2>&1 || die "tar is required to extract .tar archives."
+      command -v tar >/dev/null || die "tar is required to extract .tar archives."
       tar -xf "$archive" -C "$dest"
       ;;
     zip)
-      command -v unzip >/dev/null 2>&1 || die "unzip is required to extract .zip archives."
+      command -v unzip >/dev/null || die "unzip is required to extract .zip archives."
       unzip -q "$archive" -d "$dest"
       ;;
     *)
@@ -288,7 +279,7 @@ registry_find_line() {
   local name="$1"
   awk -F'|' -v n="$name" '
     NF >= 3 && $1 !~ /^#/ && $1 == n {print; exit}
-  ' "$VMPKG_REGISTRY" 2>/dev/null || true
+  ' "$VMPKG_REGISTRY" || true
 }
 
 registry_register() {
@@ -447,7 +438,7 @@ cmd_search() {
   ui_title "Search registry"
   echo "Registry file: ${VMPKG_REGISTRY}"
   echo
-  if ! grep -i "$pat" "$VMPKG_REGISTRY" | grep -v '^[[:space:]]*#' ; then
+  if ! grep -i "$pat" "$VMPKG_REGISTRY" | grep -v '^[[:space:]]*#'; then
     echo "No matches."
   fi
 }
@@ -697,7 +688,7 @@ cmd_doctor() {
   ui_title "vmpkg doctor"
 
   local uname_s os_name=""
-  uname_s="$(uname -s 2>/dev/null || echo "Unknown")"
+  uname_s="$(uname -s || echo "Unknown")"
   if [[ -f /etc/os-release ]]; then
     # shellcheck disable=SC1091
     . /etc/os-release
@@ -714,27 +705,27 @@ cmd_doctor() {
   echo "Bin dir:      ${VMPKG_BIN}"
   ui_hr
 
-  if command -v curl >/dev/null 2>&1; then
+  if command -v curl >/dev/null; then
     log_success "curl detected."
-  elif command -v wget >/dev/null 2>&1; then
+  elif command -v wget >/dev/null; then
     log_success "wget detected."
   else
     warn "Neither curl nor wget is installed. You cannot download packages."
   fi
 
-  if command -v tar >/dev/null 2>&1; then
+  if command -v tar >/dev/null; then
     log_success "tar detected."
   else
     warn "tar not found. tar-based archives will not work."
   fi
 
-  if command -v unzip >/dev/null 2>&1; then
+  if command -v unzip >/dev/null; then
     log_success "unzip detected."
   else
     warn "unzip not found. zip archives will not work."
   fi
 
-  if command -v free >/dev/null 2>&1; then
+  if command -v free >/dev/null; then
     log_success "free detected (memory info)."
   else
     warn "free not found. Memory info (cmd_mem/sys-info) may be limited."
@@ -765,7 +756,7 @@ cmd_sys_info() {
   echo "=== CPU (first model line) ==="
   local cpu_line=""
   if [[ -r /proc/cpuinfo ]]; then
-    cpu_line="$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null || true)"
+    cpu_line="$(grep -m1 'model name' /proc/cpuinfo || true)"
   fi
   if [[ -n "$cpu_line" ]]; then
     echo "$cpu_line"
@@ -775,7 +766,7 @@ cmd_sys_info() {
   echo
 
   echo "=== Memory ==="
-  if command -v free >/dev/null 2>&1; then
+  if command -v free >/dev/null; then
     free -h
   else
     echo "free not available"
@@ -783,7 +774,7 @@ cmd_sys_info() {
   echo
 
   echo "=== Disk (/) ==="
-  if df -h / >/dev/null 2>&1; then
+  if df -h / >/dev/null; then
     df -h /
   else
     df -h || true
@@ -802,7 +793,7 @@ cmd_disk() {
 
 cmd_mem() {
   ui_title "Memory usage"
-  if command -v free >/dev/null 2>&1; then
+  if command -v free >/dev/null; then
     free -h
   else
     echo "free not available"
@@ -811,7 +802,7 @@ cmd_mem() {
 
 cmd_top() {
   ui_title "Top processes"
-  if command -v htop >/dev/null 2>&1; then
+  if command -v htop >/dev/null; then
     htop
   else
     top
@@ -825,7 +816,7 @@ cmd_ps() {
 
 cmd_ip() {
   ui_title "Network info"
-  if command -v ip >/dev/null 2>&1; then
+  if command -v ip >/dev/null; then
     ip addr
     echo
     ip route || true
